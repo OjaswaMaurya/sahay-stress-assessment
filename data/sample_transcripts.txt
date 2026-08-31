@@ -1,0 +1,8 @@
+LOW: I wanted to ask about the status of my complaint filed last month.
+LOW: Can someone tell me when the next hearing date is?
+MEDIUM: I'm scared, they keep threatening my family, I don't know what to do anymore.
+MEDIUM: Ever since I filed the complaint, my neighbors have been hostile and I feel unsafe.
+MEDIUM: I haven't been sleeping, I keep thinking about what happened and I don't know who to trust.
+HIGH: I can't take this anymore, I just want it to end, nobody is helping me.
+HIGH: They said they'll hurt my children if I don't withdraw the case.
+HIGH: I don't see the point in continuing like this, everyone has given up on me.
