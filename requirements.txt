@@ -3,3 +3,6 @@ transformers
 torch
 soundfile
 python-dotenv
+fastapi
+uvicorn
+python-multipart

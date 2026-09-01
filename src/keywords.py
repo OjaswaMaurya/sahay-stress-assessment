@@ -6,6 +6,15 @@ Purpose: catch self-harm / threat / violence signals that a raw
 sentiment/emotion model can miss or misclassify (e.g. flat/plain
 phrasing being read as "anger" instead of a crisis signal).
 
+v2 change (post accuracy-check): THREAT was a single bucket that always
+escalated to High. That's wrong — a caller vaguely saying "they keep
+threatening my family" (ongoing harassment, no specific act stated) is
+a real Medium-severity case, whereas "they said they'll hurt my
+children if I don't withdraw" (named target + specific act + coercion)
+is a genuine High. So THREAT is now split into:
+    - THREAT_EXPLICIT -> High  (named victim/target + specific violent act)
+    - THREAT_VAGUE     -> Medium (harassment/threat language, no specifics)
+
 This is intentionally simple string matching for the hackathon build.
 Future scope (mention in pitch, not needed now): regex word-boundaries,
 negation handling ("I don't want to hurt myself"), multilingual keyword
@@ -28,9 +37,7 @@ SELF_HARM = [
     "i just want it to end",
 ]
 
-THREAT = [
-    "threatening my family",
-    "threatening me",
+THREAT_EXPLICIT = [
     "they said they'll hurt",
     "they said theyll hurt",
     "will hurt my children",
@@ -39,6 +46,11 @@ THREAT = [
     "kill my family",
     "won't let me live",
     "wont let me live",
+]
+
+THREAT_VAGUE = [
+    "threatening my family",
+    "threatening me",
 ]
 
 VIOLENCE = [
@@ -56,17 +68,21 @@ VIOLENCE = [
 
 def contains_flagged_keywords(text: str) -> dict:
     """
-    Scan input text against SELF_HARM, THREAT, VIOLENCE keyword lists.
+    Scan input text against SELF_HARM, THREAT_EXPLICIT, THREAT_VAGUE,
+    VIOLENCE keyword lists.
 
     Returns:
         {
             "matched": bool,
-            "category": "self_harm" | "threat" | "violence" | None,
+            "category": "self_harm" | "threat_explicit" | "threat_vague"
+                        | "violence" | None,
             "matched_phrase": str | None,
         }
 
-    Priority order if multiple categories match: self_harm > threat > violence,
-    since self-harm risk should always win the override.
+    Priority order if multiple categories match:
+        self_harm > threat_explicit > violence > threat_vague
+    self-harm risk always wins; explicit named threats / already-occurred
+    violence outrank a vague/ambient threat mention.
     """
     if not text:
         return {"matched": False, "category": None, "matched_phrase": None}
@@ -77,12 +93,16 @@ def contains_flagged_keywords(text: str) -> dict:
         if phrase in lowered:
             return {"matched": True, "category": "self_harm", "matched_phrase": phrase}
 
-    for phrase in THREAT:
+    for phrase in THREAT_EXPLICIT:
         if phrase in lowered:
-            return {"matched": True, "category": "threat", "matched_phrase": phrase}
+            return {"matched": True, "category": "threat_explicit", "matched_phrase": phrase}
 
     for phrase in VIOLENCE:
         if phrase in lowered:
             return {"matched": True, "category": "violence", "matched_phrase": phrase}
+
+    for phrase in THREAT_VAGUE:
+        if phrase in lowered:
+            return {"matched": True, "category": "threat_vague", "matched_phrase": phrase}
 
     return {"matched": False, "category": None, "matched_phrase": None}
