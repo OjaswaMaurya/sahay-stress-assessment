@@ -1,18 +1,10 @@
-"""
-api.py
-FastAPI layer for SAHAY — exposes the pipeline (src/pipeline.py) over HTTP
-so the counselor dashboard / demo frontend can call it.
-
-Step 1a: bare app skeleton + /health only.
-Deliberately NOT importing src.pipeline here yet — that pulls in
-transformers/whisper (heavy, slow first-load). Endpoints that need it
-get wired in step 1c.
-"""
-
 from typing import List, Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-
+import os
+import shutil
+import tempfile
+from fastapi import UploadFile, File
 from src.pipeline import run_pipeline
 
 
@@ -61,4 +53,20 @@ def assess(payload: AssessRequest):
         # model load / inference failure — don't leak internals, but don't crash either
         raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
 
+    return result
+@app.post("/assess-audio", response_model=AssessResponse)
+async def assess_audio(file: UploadFile = File(...)):
+    suffix = os.path.splitext(file.filename)[1] or ".mp3"
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            tmp_path = tmp.name
+        try:
+            result = run_pipeline(audio_path=tmp_path)
+        finally:
+            os.remove(tmp_path)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
     return result
