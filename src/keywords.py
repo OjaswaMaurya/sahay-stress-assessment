@@ -1,25 +1,4 @@
-"""
-keywords.py
-Rule-based safety-net layer for SAHAY.
 
-Purpose: catch self-harm / threat / violence signals that a raw
-sentiment/emotion model can miss or misclassify (e.g. flat/plain
-phrasing being read as "anger" instead of a crisis signal).
-
-v2 change (post accuracy-check): THREAT was a single bucket that always
-escalated to High. That's wrong — a caller vaguely saying "they keep
-threatening my family" (ongoing harassment, no specific act stated) is
-a real Medium-severity case, whereas "they said they'll hurt my
-children if I don't withdraw" (named target + specific act + coercion)
-is a genuine High. So THREAT is now split into:
-    - THREAT_EXPLICIT -> High  (named victim/target + specific violent act)
-    - THREAT_VAGUE     -> Medium (harassment/threat language, no specifics)
-
-This is intentionally simple string matching for the hackathon build.
-Future scope (mention in pitch, not needed now): regex word-boundaries,
-negation handling ("I don't want to hurt myself"), multilingual keyword
-sets for Hindi/regional languages via AI4Bharat/IndicNLP.
-"""
 
 SELF_HARM = [
     "end it",
@@ -35,6 +14,15 @@ SELF_HARM = [
     "given up on me",
     "better off without me",
     "i just want it to end",
+    "kill myself",
+    "end my life"
+    "want to suicide",
+    "don't want to live",
+    "do not want to live",
+    "don't want to live anymore",
+    "want to end it",
+    "don't want to stay anymore",
+    "i want to die"
 ]
 
 THREAT_EXPLICIT = [
@@ -46,6 +34,8 @@ THREAT_EXPLICIT = [
     "kill my family",
     "won't let me live",
     "wont let me live",
+    "kill him",
+    "hurt them",
 ]
 
 THREAT_VAGUE = [
@@ -63,6 +53,10 @@ VIOLENCE = [
     "hit me",
     "hit by",
     "physically abused",
+    "going to hurt",
+    "i am going to hurt",
+    "i'm going to hurt",
+    "will hurt that person",
 ]
 
 
