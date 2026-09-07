@@ -6,8 +6,10 @@ import shutil
 import tempfile
 from fastapi import UploadFile, File
 from src.pipeline import run_pipeline
+from src.companion import generate_supportive_reply
 
-
+class RespondResponse(AssessResponse):
+    counselor_reply: str
 class AssessRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Victim's message/transcript to assess.")
 
@@ -70,3 +72,14 @@ async def assess_audio(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
     return result
+@app.post("/respond", response_model=RespondResponse)
+def respond(payload: AssessRequest):
+    try:
+        result = run_pipeline(text=payload.text)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
+
+    reply = generate_supportive_reply(payload.text, result["severity"])
+    return {**result, "counselor_reply": reply}
