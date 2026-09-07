@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAHAYAK — AI Mental Wellness Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,450&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-canvas:#E9E5DC;
+    --bg-app:#F8F6F1;
+    --card:#FFFFFF;
+    --teal-deep:#2C5952;
+    --teal-deep-2:#254B45;
+    --teal:#4C8C82;
+    --teal-soft:#E1EEEB;
+    --blue-soft:#DCE9F0;
+    --blue:#7FA8BE;
+    --lavender:#E7E1F6;
+    --lavender-deep:#9C8FD1;
+    --yellow:#E7B84F;
+    --yellow-soft:#FBF0D9;
+    --text-primary:#242E2B;
+    --text-muted:#7B857F;
+    --text-faint:#A4ACA6;
+    --border:#EEEAE2;
+    --radius-lg:24px;
+    --radius-md:18px;
+    --radius-sm:12px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg-canvas);
+    font-family:'Inter', sans-serif;
+    color:var(--text-primary);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding:20px;
+  }
+  .app{
+    width:1440px;
+    height:900px;
+    background:var(--bg-app);
+    border-radius:32px;
+    box-shadow:0 40px 80px -20px rgba(38,58,52,0.25);
+    display:grid;
+    grid-template-columns:236px 1fr;
+    overflow:hidden;
+  }
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    background:linear-gradient(180deg,var(--teal-deep) 0%, var(--teal-deep-2) 100%);
+    color:#fff;
+    padding:28px 20px;
+    display:flex;
+    flex-direction:column;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:6px 8px 32px 8px;
+  }
+  .brand-mark{
+    width:34px; height:34px;
+    border-radius:50%;
+    background:radial-gradient(circle at 32% 30%, #EFCE85, #E7B84F 55%, #C99732 100%);
+    position:relative;
+    flex-shrink:0;
+  }
+  .brand-mark svg{position:absolute; inset:0;}
+  .brand-name{font-size:17px; font-weight:600; letter-spacing:0.02em;}
+  .brand-sub{font-size:10.5px; color:rgba(255,255,255,0.55); margin-top:1px; letter-spacing:0.02em;}
+
+  nav{display:flex; flex-direction:column; gap:2px; margin-top:8px;}
+  .nav-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:11px 12px;
+    border-radius:12px;
+    color:rgba(255,255,255,0.62);
+    font-size:14px;
+    font-weight:500;
+    position:relative;
+    cursor:pointer;
+  }
+  .nav-item svg{width:18px; height:18px; flex-shrink:0; opacity:0.9;}
+  .nav-item.active{
+    background:rgba(255,255,255,0.12);
+    color:#fff;
+  }
+  .nav-item.active::before{
+    content:"";
+    position:absolute;
+    left:-20px;
+    top:50%;
+    transform:translateY(-50%);
+    width:4px; height:20px;
+    background:var(--yellow);
+    border-radius:0 4px 4px 0;
+  }
+
+  .sidebar-spacer{flex:1;}
+
+  .sidebar-profile{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:12px;
+    border-radius:14px;
+    background:rgba(255,255,255,0.07);
+  }
+  .avatar-sm{
+    width:36px; height:36px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#EAD9F0,#C9BFE8);
+    flex-shrink:0;
+  }
+  .sidebar-profile .name{font-size:13px; font-weight:600; color:#fff;}
+  .sidebar-profile .role{font-size:11px; color:rgba(255,255,255,0.5);}
+
+  /* ---------- MAIN ---------- */
+  .main{
+    padding:36px 32px 24px 32px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .topbar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    margin-bottom:26px;
+  }
+  .greeting{
+    font-family:'Fraunces', serif;
+    font-weight:450;
+    font-style:italic;
+    font-size:30px;
+    color:var(--text-primary);
+  }
+  .greeting-sub{
+    margin-top:6px;
+    font-size:14px;
+    color:var(--text-muted);
+  }
+  .topbar-right{display:flex; align-items:center; gap:14px;}
+  .icon-btn{
+    width:38px; height:38px;
+    border-radius:50%;
+    background:var(--card);
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--text-muted);
+  }
+  .icon-btn svg{width:17px; height:17px;}
+  .topbar-date{
+    font-size:12.5px;
+    color:var(--text-muted);
+    background:var(--card);
+    border:1px solid var(--border);
+    padding:9px 14px;
+    border-radius:999px;
+  }
+
+  .content-scroll{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding-right:4px;
+    padding-bottom:4px;
+  }
+  .content-scroll > *{flex-shrink:0;}
+  .content-scroll::-webkit-scrollbar{width:6px;}
+  .content-scroll::-webkit-scrollbar-track{background:transparent;}
+  .content-scroll::-webkit-scrollbar-thumb{background:#D9D4C7; border-radius:999px;}
+  .content-scroll::-webkit-scrollbar-thumb:hover{background:#C9C3B4;}
+
+  /* ---------- VIEW SWITCHING ---------- */
+  .view{
+    display:none;
+    flex:1;
+    overflow:hidden;
+    flex-direction:column;
+  }
+  .view.active{display:flex;}
+  .view-placeholder{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:var(--text-faint);
+    font-size:14px;
+    border:1.5px dashed var(--border);
+    border-radius:var(--radius-lg);
+    background:var(--card);
+  }
+
+  /* Hero check-in card */
+  .hero-card{
+    background:linear-gradient(120deg, var(--teal-deep) 0%, #3C7168 100%);
+    border-radius:var(--radius-lg);
+    padding:26px 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    color:#fff;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-card::after{
+    content:"";
+    position:absolute;
+    right:-40px; top:-60px;
+    width:220px; height:220px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.06);
+  }
+  .hero-left{position:relative; z-index:1; max-width:60%;}
+  .hero-eyebrow{font-size:12.5px; color:rgba(255,255,255,0.65); margin-bottom:8px;}
+  .hero-title{font-family:'Fraunces', serif; font-size:22px; font-weight:500; line-height:1.35; margin-bottom:16px;}
+  .cta-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--yellow);
+    color:#2C230B;
+    font-weight:600;
+    font-size:13.5px;
+    padding:12px 20px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+  }
+  .cta-btn svg{width:15px; height:15px;}
+  .hero-avatar{
+    position:relative; z-index:1;
+    width:96px; height:96px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #EAF3F1, #BFE0D9 60%, #8FC7BC 100%);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .hero-avatar svg{width:52px; height:52px;}
+
+  /* two column: gauge + trend */
+  .row-two{
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:18px;
+  }
+  .card{
+    background:var(--card);
+    border-radius:var(--radius-lg);
+    border:1px solid var(--border);
+    padding:22px 24px;
+  }
+  .card-title{font-size:14px; font-weight:600; color:var(--text-primary);}
+  .card-caption{font-size:12px; color:var(--text-faint); margin-top:2px;}
+
+  .gauge-card{display:flex; flex-direction:column; align-items:center;}
+  .gauge-wrap{width:210px; margin-top:6px;}
+  .gauge-score{
+    text-align:center;
+    margin-top:-46px;
+  }
+  .gauge-score .num{font-family:'Fraunces', serif; font-size:38px; font-weight:500;}
+  .gauge-score .num span{font-size:16px; color:var(--text-faint); font-family:'Inter';}
+  .gauge-tag{
+    margin-top:6px;
+    display:inline-block;
+    font-size:11.5px;
+    font-weight:600;
+    color:#A97417;
+    background:var(--yellow-soft);
+    padding:5px 12px;
+    border-radius:999px;
+  }
+
+  .trend-card{display:flex; flex-direction:column;}
+  .trend-head{display:flex; justify-content:space-between; align-items:flex-start;}
+  .trend-legend{display:flex; gap:14px; font-size:11.5px; color:var(--text-muted);}
+  .dot{width:7px; height:7px; border-radius:50%; display:inline-block; margin-right:5px;}
+  .trend-chart{flex:1; margin-top:10px;}
+  .trend-days{display:flex; justify-content:space-between; padding:0 4px; margin-top:4px;}
+  .trend-days span{font-size:11px; color:var(--text-faint);}
+
+  /* insight tiles */
+  .tiles-row{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
+  .tile{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:16px 18px;
+  }
+  .tile-icon{
+    width:34px; height:34px;
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:12px;
+  }
+  .tile-icon svg{width:17px; height:17px;}
+  .tile-label{font-size:12px; color:var(--text-muted);}
+  .tile-value{font-size:16px; font-weight:600; margin-top:3px;}
+
+  /* AI insight banner */
+  .insight-banner{
+    background:var(--lavender);
+    border-radius:var(--radius-lg);
+    padding:18px 24px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .insight-avatar{
+    width:44px; height:44px;
+    border-radius:50%;
+    background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .insight-avatar svg{width:22px; height:22px; color:var(--lavender-deep);}
+  .insight-text{font-size:13.5px; line-height:1.5; color:#3C3555;}
+  .insight-text b{font-weight:600;}
+  .insight-link{
+    margin-left:auto;
+    font-size:13px;
+    font-weight:600;
+    color:var(--lavender-deep);
+    background:#fff;
+    padding:9px 16px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+
+  /* recommended */
+  .rec-row{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .rec-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:17px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .rec-icon{
+    width:36px; height:36px;
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rec-icon svg{width:18px; height:18px;}
+  .rec-title{font-size:13.5px; font-weight:600;}
+  .rec-sub{font-size:11.5px; color:var(--text-muted);}
+
+  svg{display:block;}
+
+  /* ---------- PROFILE VIEW (Batch 3A) ---------- */
+  .profile-header{display:flex; align-items:center; justify-content:space-between; gap:20px;}
+  .profile-header-left{display:flex; align-items:center; gap:16px;}
+  .avatar-lg{
+    width:64px; height:64px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#EAD9F0,#C9BFE8);
+    flex-shrink:0;
+  }
+  .profile-name{font-family:'Fraunces', serif; font-size:20px; font-weight:500;}
+  .profile-meta{font-size:12.5px; color:var(--text-muted); margin-top:4px;}
+  .profile-meta b{color:var(--text-primary); font-weight:600;}
+  .edit-profile-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    border:1px solid var(--border);
+    color:var(--text-muted);
+    font-size:13px;
+    font-weight:600;
+    padding:10px 18px;
+    border-radius:999px;
+    cursor:not-allowed;
+    flex-shrink:0;
+  }
+  .edit-profile-btn svg{width:14px; height:14px;}
+  .edit-profile-btn .soon-tag{
+    font-size:10px;
+    font-weight:600;
+    color:var(--text-faint);
+    margin-left:2px;
+  }
+
+  .profile-stats-row{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+  .stat-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:20px 22px;
+  }
+  .stat-label{font-size:12.5px; color:var(--text-muted);}
+  .stat-value{font-family:'Fraunces', serif; font-size:30px; font-weight:500; margin-top:6px;}
+  .stat-value .unit{font-size:16px; color:var(--text-faint); font-family:'Inter', sans-serif;}
+  .stat-sub{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
+
+  .field-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px 0;
+    border-top:1px solid var(--border);
+  }
+  .field-row:first-of-type{border-top:none; padding-top:0;}
+  .field-label{font-size:12.5px; color:var(--text-muted);}
+  .field-input{
+    font-size:13.5px;
+    font-weight:500;
+    color:var(--text-primary);
+    background:var(--bg-app);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:8px 14px;
+    min-width:220px;
+    text-align:right;
+  }
+
+  /* ---------- AI CHAT VIEW (Batch 2A — structure only) ---------- */
+  .chat-view-layout{
+    flex:1;
+    display:grid;
+    grid-template-columns:1fr 300px;
+    gap:18px;
+    overflow:hidden;
+  }
+
+  /* main chat column */
+  .chat-main{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .chat-main-header{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:18px 22px;
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .chat-main-header .avatar-md{
+    width:38px; height:38px;
+    border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #EAF3F1, #BFE0D9 60%, #8FC7BC 100%);
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .chat-main-header .avatar-md svg{width:20px; height:20px;}
+  .chat-main-header .title{font-size:14.5px; font-weight:600;}
+  .chat-main-header .subtitle{font-size:12px; color:var(--text-muted); margin-top:1px;}
+
+  .chat-message-list{
+    flex:1;
+    overflow-y:auto;
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .chat-empty-state{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    gap:6px;
+    color:var(--text-faint);
+  }
+  .chat-empty-state svg{width:36px; height:36px; opacity:0.5; margin-bottom:6px;}
+  .chat-empty-state .line-1{font-size:14px; font-weight:500; color:var(--text-muted);}
+  .chat-empty-state .line-2{font-size:12.5px;}
+
+  .chat-input-bar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:16px 20px;
+    border-top:1px solid var(--border);
+    flex-shrink:0;
+  }
+  .chat-input-bar input{
+    flex:1;
+    border:1px solid var(--border);
+    background:var(--bg-app);
+    border-radius:999px;
+    padding:12px 18px;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    color:var(--text-primary);
+    outline:none;
+  }
+  .chat-input-bar input::placeholder{color:var(--text-faint);}
+  .chat-send-btn{
+    width:42px; height:42px;
+    border-radius:50%;
+    background:var(--teal-deep);
+    border:none;
+    color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    cursor:pointer;
+  }
+  .chat-send-btn svg{width:17px; height:17px;}
+
+  /* right panel: session summary (Batch 2D shell) */
+  .chat-panel{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    overflow-y:auto;
+  }
+  .chat-panel-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:20px;
+  }
+  .chat-panel-title{font-size:13.5px; font-weight:600;}
+  .chat-panel-caption{font-size:11.5px; color:var(--text-faint); margin-top:2px;}
+  .chat-panel-stat-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+  }
+  .chat-panel-stat-row:first-of-type{border-top:none; margin-top:16px; padding-top:0;}
+  .chat-panel-stat-label{font-size:12px; color:var(--text-muted);}
+  .chat-panel-stat-value{font-size:14px; font-weight:600;}
+  .chat-panel-stat-value#panelCurrentTrend{display:flex; align-items:center; gap:6px;}
+  .chat-panel-trend-dot{
+    width:8px; height:8px;
+    border-radius:50%;
+    background:var(--text-faint);
+    display:inline-block;
+    flex-shrink:0;
+  }
+  .chat-panel-trend-dot.low{background:var(--teal);}
+  .chat-panel-trend-dot.moderate{background:var(--yellow);}
+  .chat-panel-trend-dot.high{background:#D9714F;}
+
+  /* message bubbles (Batch 2B) */
+  .chat-bubble-row{display:flex;}
+  .chat-bubble-row.user{justify-content:flex-end;}
+  .chat-bubble-row.ai{justify-content:flex-start;}
+  .chat-bubble{
+    max-width:70%;
+    padding:11px 16px;
+    border-radius:16px;
+    font-size:13.5px;
+    line-height:1.45;
+  }
+  .chat-bubble-row.user .chat-bubble{
+    background:var(--teal-deep);
+    color:#fff;
+    border-bottom-right-radius:4px;
+  }
+  .chat-bubble-row.ai .chat-bubble{
+    background:var(--teal-soft);
+    color:var(--text-primary);
+    border-bottom-left-radius:4px;
+  }
+
+  /* severity badge + typing indicator (Batch 2C) */
+  .chat-severity-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:10.5px;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:999px;
+    margin-top:5px;
+  }
+  .chat-bubble-row.user{flex-direction:column; align-items:flex-end;}
+  .chat-severity-badge .dot-sm{width:6px; height:6px; border-radius:50%; display:inline-block;}
+  .chat-severity-badge.low{background:var(--teal-soft); color:var(--teal-deep);}
+  .chat-severity-badge.low .dot-sm{background:var(--teal);}
+  .chat-severity-badge.moderate{background:var(--yellow-soft); color:#A97417;}
+  .chat-severity-badge.moderate .dot-sm{background:var(--yellow);}
+  .chat-severity-badge.high{background:#F7E3DE; color:#B9583D;}
+  .chat-severity-badge.high .dot-sm{background:#D9714F;}
+
+  .chat-typing-row{display:flex; justify-content:flex-start;}
+  .chat-typing-bubble{
+    background:var(--teal-soft);
+    padding:12px 16px;
+    border-radius:16px;
+    border-bottom-left-radius:4px;
+    display:flex;
+    gap:4px;
+  }
+  .chat-typing-bubble span{
+    width:6px; height:6px;
+    border-radius:50%;
+    background:var(--teal);
+    opacity:0.5;
+    animation:chatTypingBlink 1.1s infinite ease-in-out;
+  }
+  .chat-typing-bubble span:nth-child(2){animation-delay:0.15s;}
+  .chat-typing-bubble span:nth-child(3){animation-delay:0.3s;}
+  @keyframes chatTypingBlink{
+    0%, 60%, 100%{opacity:0.35; transform:translateY(0);}
+    30%{opacity:1; transform:translateY(-2px);}
+  }
+
+  /* ---------- STRESS ANALYSIS VIEW (Batch 4) ---------- */
+  .stress-scroll{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding-right:4px;
+    padding-bottom:4px;
+  }
+  .stress-scroll > *{flex-shrink:0;}
+  .stress-scroll::-webkit-scrollbar{width:6px;}
+  .stress-scroll::-webkit-scrollbar-track{background:transparent;}
+  .stress-scroll::-webkit-scrollbar-thumb{background:#D9D4C7; border-radius:999px;}
+  .stress-scroll::-webkit-scrollbar-thumb:hover{background:#C9C3B4;}
+
+  .trend-card-lg{display:flex; flex-direction:column;}
+  .trend-chart-lg{flex:1; margin-top:14px; min-height:180px;}
+
+  /* 3-signal breakdown */
+  .signal-row{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
+  .signal-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:20px 22px;
+  }
+  .signal-icon{
+    width:38px; height:38px;
+    border-radius:11px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:14px;
+  }
+  .signal-icon svg{width:18px; height:18px;}
+  .signal-label{font-size:12.5px; color:var(--text-muted);}
+  .signal-value{font-family:'Fraunces', serif; font-size:19px; font-weight:500; margin-top:2px; color:var(--text-primary);}
+  .signal-bar{
+    width:100%; height:6px;
+    background:var(--bg-app);
+    border-radius:999px;
+    overflow:hidden;
+    margin-top:12px;
+  }
+  .signal-bar-fill{height:100%; border-radius:999px;}
+  .signal-caption{font-size:11.5px; color:var(--text-faint); margin-top:10px;}
+
+  /* past check-ins list */
+  .checkins-card{display:flex; flex-direction:column;}
+  .checkins-list{margin-top:16px; display:flex; flex-direction:column;}
+  .checkin-row{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    padding:14px 4px;
+    border-top:1px solid var(--border);
+  }
+  .checkin-row:first-child{border-top:none; padding-top:0;}
+  .checkin-date{width:88px; flex-shrink:0;}
+  .checkin-day{font-size:13px; font-weight:600; color:var(--text-primary);}
+  .checkin-time{font-size:11.5px; color:var(--text-faint); margin-top:1px;}
+  .checkin-snippet{flex:1; font-size:13px; color:var(--text-muted); min-width:0;}
+  .checkin-row .chat-severity-badge{flex-shrink:0;}
+
+  /* ---------- PROFILE VIEW (Batch 3) ---------- */
+  .profile-scroll{
+    flex:1;
+    overflow-y:auto;
+    overflow-x:hidden;
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+    padding-right:4px;
+    padding-bottom:4px;
+  }
+  .profile-scroll > *{flex-shrink:0;}
+  .profile-scroll::-webkit-scrollbar{width:6px;}
+  .profile-scroll::-webkit-scrollbar-track{background:transparent;}
+  .profile-scroll::-webkit-scrollbar-thumb{background:#D9D4C7; border-radius:999px;}
+  .profile-scroll::-webkit-scrollbar-thumb:hover{background:#C9C3B4;}
+
+  /* profile header card */
+  .profile-header-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:26px 30px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+  }
+  .profile-avatar-lg{
+    width:76px; height:76px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#EAD9F0,#C9BFE8);
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .profile-avatar-lg svg{width:34px; height:34px; color:#6E5FA8;}
+  .profile-header-info{flex:1; min-width:0;}
+  .profile-name{font-family:'Fraunces', serif; font-size:22px; font-weight:500; color:var(--text-primary);}
+  .profile-meta-row{display:flex; align-items:center; gap:10px; margin-top:8px; flex-wrap:wrap;}
+  .profile-meta-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:12px;
+    font-weight:500;
+    color:var(--text-muted);
+    background:var(--bg-app);
+    border:1px solid var(--border);
+    padding:6px 12px;
+    border-radius:999px;
+  }
+  .profile-meta-tag b{color:var(--text-primary); font-weight:600;}
+  .profile-edit-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--teal-soft);
+    color:var(--teal-deep);
+    font-weight:600;
+    font-size:13px;
+    padding:11px 18px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .profile-edit-btn:hover{background:#D3E5E1;}
+  .profile-edit-btn svg{width:15px; height:15px;}
+
+  /* profile stats */
+  .profile-stats-row{display:grid; grid-template-columns:repeat(2,1fr); gap:16px;}
+  .profile-stat-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-md);
+    padding:20px 22px;
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .profile-stat-icon{
+    width:44px; height:44px;
+    border-radius:12px;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .profile-stat-icon svg{width:20px; height:20px;}
+  .profile-stat-label{font-size:12.5px; color:var(--text-muted);}
+  .profile-stat-value{font-family:'Fraunces', serif; font-size:24px; font-weight:500; margin-top:2px; color:var(--text-primary);}
+
+  /* profile edit section (non-functional) */
+  .profile-edit-card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    padding:24px 28px;
+  }
+  .profile-edit-card .card-title{margin-bottom:2px;}
+  .profile-edit-card .card-caption{margin-bottom:18px;}
+  .profile-form-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  .profile-form-field{display:flex; flex-direction:column; gap:6px;}
+  .profile-form-field label{font-size:12px; font-weight:600; color:var(--text-muted);}
+  .profile-form-field input{
+    border:1px solid var(--border);
+    background:var(--bg-app);
+    border-radius:12px;
+    padding:11px 14px;
+    font-family:'Inter', sans-serif;
+    font-size:13.5px;
+    color:var(--text-primary);
+    outline:none;
+  }
+  .profile-form-field input:disabled{
+    color:var(--text-faint);
+    cursor:not-allowed;
+  }
+  .profile-form-field input:not(:disabled){
+    cursor:text;
+    background:var(--card);
+    border-color:var(--teal);
+  }
+  .profile-form-field input:not(:disabled):focus{
+    border-color:var(--teal-deep);
+    box-shadow:0 0 0 3px rgba(76,140,130,0.12);
+  }
+  .profile-edit-actions{
+    display:none;
+    gap:10px;
+    margin-top:18px;
+  }
+  .profile-save-btn{
+    background:var(--teal-deep);
+    color:#fff;
+    font-weight:600;
+    font-size:13px;
+    padding:11px 20px;
+    border-radius:999px;
+    border:none;
+    cursor:pointer;
+  }
+  .profile-save-btn:hover{background:var(--teal-deep-2);}
+  .profile-cancel-btn{
+    background:transparent;
+    color:var(--text-muted);
+    font-weight:600;
+    font-size:13px;
+    padding:11px 20px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    cursor:pointer;
+  }
+  .profile-cancel-btn:hover{background:var(--bg-app);}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 34 34" fill="none">
+          <circle cx="17" cy="17" r="6" fill="#2C5952" opacity="0.85"/>
+          <circle cx="17" cy="17" r="10.5" stroke="#2C5952" stroke-width="1.3" opacity="0.5"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">SAHAYAK</div>
+        <div class="brand-sub">your quiet companion</div>
+      </div>
+    </div>
+
+    <nav>
+      <div class="nav-item" data-view="aichat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-7z"/></svg>
+        AI Chat
+      </div>
+      <div class="nav-item" data-view="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c0-3.5 3.1-6 7-6s7 2.5 7 6"/></svg>
+        Profile
+      </div>
+      <div class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="13" y="3.5" width="7.5" height="7.5" rx="2"/><rect x="3.5" y="13" width="7.5" height="7.5" rx="2"/><rect x="13" y="13" width="7.5" height="7.5" rx="2"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" data-view="stress-analysis">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 13h3.5l2-6 3.5 12 2.5-9 1.5 4H21"/></svg>
+        Stress Analysis
+      </div>
+      <div class="nav-item" data-view="anonymous-calls">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h3.5l1.5 4-2 1.5c.9 2.1 2.4 3.6 4.5 4.5l1.5-2 4 1.5V18c0 1.1-.9 2-2 2C10.5 20 4 13.5 4 8c0-1.1.9-2 2-2z"/><circle cx="18" cy="6" r="1.4" fill="currentColor" stroke="none"/></svg>
+        Anonymous Calls
+      </div>
+      <div class="nav-item" data-view="breathing">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2.6"/><circle cx="12" cy="12" r="6.4" opacity="0.7"/><circle cx="12" cy="12" r="9.5" opacity="0.4"/></svg>
+        Breathing &amp; Relaxation
+      </div>
+      <div class="nav-item" data-view="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        History
+      </div>
+      <div class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11M4 12h16M4 17h9"/><circle cx="17" cy="7" r="1.8" fill="currentColor" stroke="none"/><circle cx="9" cy="17" r="1.8" fill="currentColor" stroke="none"/></svg>
+        Settings
+      </div>
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+
+    <div class="sidebar-profile">
+      <div class="avatar-sm"></div>
+      <div>
+        <div class="name">Aditi Rao</div>
+        <div class="role">Free plan</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="greeting">Good Morning Dear</div>
+        <div class="greeting-sub">Let's check in with yourself today.</div>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-date">Thursday, 4 September</div>
+        <div class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 5.5H4.5S6 14 6 10z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ VIEW: DASHBOARD ============ -->
+    <section class="view active" id="view-dashboard">
+    <div class="content-scroll">
+
+      <!-- hero check-in -->
+      <div class="hero-card">
+        <div class="hero-left">
+          <div class="hero-eyebrow">Daily check-in</div>
+          <div class="hero-title">How are you feeling today?<br>A two-minute check-in helps me understand you better.</div>
+          <button class="cta-btn" id="startStressCheckBtn">
+            Start Stress Check
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <div class="hero-avatar">
+          <svg viewBox="0 0 52 52" fill="none">
+            <circle cx="26" cy="26" r="9" fill="#2C5952"/>
+            <circle cx="26" cy="26" r="15.5" stroke="#2C5952" stroke-width="1.4" opacity="0.45"/>
+            <circle cx="22.5" cy="24" r="1.4" fill="#fff"/>
+            <circle cx="29.5" cy="24" r="1.4" fill="#fff"/>
+            <path d="M22 29.5c1.4 1.4 6.6 1.4 8 0" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- gauge + trend -->
+      <div class="row-two">
+        <div class="card gauge-card">
+          <div style="width:100%;">
+            <div class="card-title">Stress severity</div>
+            <div class="card-caption">Based on today's signals</div>
+          </div>
+          <div class="gauge-wrap">
+            <svg viewBox="0 0 220 130" width="100%">
+              <defs>
+                <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#4C8C82"/>
+                  <stop offset="100%" stop-color="#E7B84F"/>
+                </linearGradient>
+              </defs>
+              <path d="M20,120 A90,90 0 0 1 200,120" fill="none" stroke="#EDE9E0" stroke-width="16" stroke-linecap="round"/>
+              <path d="M20,120 A90,90 0 0 1 200,120" fill="none" stroke="url(#gaugeGrad)" stroke-width="16" stroke-linecap="round"
+                    stroke-dasharray="118 283" />
+            </svg>
+          </div>
+          <div class="gauge-score">
+            <div class="num">42<span>/100</span></div>
+            <div class="gauge-tag">Moderate stress</div>
+          </div>
+        </div>
+
+        <div class="card trend-card">
+          <div class="trend-head">
+            <div>
+              <div class="card-title">7-day stress trend</div>
+              <div class="card-caption">How your levels moved this week</div>
+            </div>
+            <div class="trend-legend">
+              <span><span class="dot" style="background:var(--teal)"></span>Stress level</span>
+            </div>
+          </div>
+          <div class="trend-chart">
+            <svg viewBox="0 0 620 160" width="100%" height="150">
+              <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#4C8C82" stop-opacity="0.22"/>
+                  <stop offset="100%" stop-color="#4C8C82" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,107 C34,103 69,97 103,97 C137,97 172,101 206,101 C240,101 275,90 309,90 C343,90 378,94 412,94 C446,94 481,79 515,79 C549,79 584,86 618,86 L618,160 L0,160 Z" fill="url(#areaGrad)"/>
+              <path d="M0,107 C34,103 69,97 103,97 C137,97 172,101 206,101 C240,101 275,90 309,90 C343,90 378,94 412,94 C446,94 481,79 515,79 C549,79 584,86 618,86" fill="none" stroke="#4C8C82" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="515" cy="79" r="4.5" fill="#fff" stroke="#4C8C82" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="trend-days">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- insight tiles -->
+      <div class="tiles-row">
+        <div class="tile">
+          <div class="tile-icon" style="background:var(--blue-soft); color:#3E6B82;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13.5A8.5 8.5 0 1 1 10.5 4a6.8 6.8 0 0 0 9.5 9.5z"/></svg>
+          </div>
+          <div class="tile-label">Sleep quality</div>
+          <div class="tile-value">7.2 hrs</div>
+        </div>
+        <div class="tile">
+          <div class="tile-icon" style="background:var(--lavender); color:var(--lavender-deep);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9 10h.01M15 10h.01"/><path d="M8.5 14.5c1 1 5 1 7 0"/></svg>
+          </div>
+          <div class="tile-label">Mood</div>
+          <div class="tile-value">Calm</div>
+        </div>
+        <div class="tile">
+          <div class="tile-icon" style="background:var(--yellow-soft); color:#A97417;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h5.5L11 21l8-11h-5.5z"/></svg>
+          </div>
+          <div class="tile-label">Energy</div>
+          <div class="tile-value">Moderate</div>
+        </div>
+        <div class="tile">
+          <div class="tile-icon" style="background:var(--teal-soft); color:var(--teal-deep);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13h3.5l2-6 3.5 12 2.5-9 1.5 4H20"/></svg>
+          </div>
+          <div class="tile-label">Top trigger</div>
+          <div class="tile-value">Work deadlines</div>
+        </div>
+      </div>
+
+      <!-- AI insight banner -->
+      <div class="insight-banner">
+        <div class="insight-avatar">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="#9C8FD1"/><circle cx="12" cy="12" r="7.5" stroke="#9C8FD1" stroke-width="1.2" opacity="0.5"/></svg>
+        </div>
+        <div class="insight-text">
+          <b>Sahayak noticed something.</b> Your stress has increased slightly over the last 3 days. A short breathing exercise could help bring it back down.
+        </div>
+        <div class="insight-link">Try a breathing exercise</div>
+      </div>
+
+      <!-- recommended -->
+      <div>
+        <div class="card-title" style="margin-bottom:12px;">Recommended for you</div>
+        <div class="rec-row">
+          <div class="rec-card">
+            <div class="rec-icon" style="background:var(--teal-soft); color:var(--teal-deep);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7" opacity="0.7"/><circle cx="12" cy="12" r="10.5" opacity="0.4"/></svg>
+            </div>
+            <div class="rec-title">5-minute breathing exercise</div>
+            <div class="rec-sub">Guided · calms nervous system</div>
+          </div>
+          <div class="rec-card">
+            <div class="rec-icon" style="background:var(--lavender); color:var(--lavender-deep);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-7z"/></svg>
+            </div>
+            <div class="rec-title">Talk to Sahayak</div>
+            <div class="rec-sub">Open chat · always here to listen</div>
+          </div>
+          <div class="rec-card">
+            <div class="rec-icon" style="background:var(--yellow-soft); color:#A97417;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <div class="rec-title">Take a mindful break</div>
+            <div class="rec-sub">3 minutes · step away and reset</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    </section>
+
+    <!-- ============ VIEW: AI CHAT ============ -->
+    <section class="view" id="view-aichat">
+      <div class="chat-view-layout">
+
+        <!-- main chat column -->
+        <div class="chat-main">
+          <div class="chat-main-header">
+            <div class="avatar-md">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" fill="#4C8C82"/><circle cx="12" cy="12" r="7.5" stroke="#4C8C82" stroke-width="1.2" opacity="0.5"/></svg>
+            </div>
+            <div>
+              <div class="title">Sahayak</div>
+              <div class="subtitle">Always here to listen</div>
+            </div>
+          </div>
+
+          <div class="chat-message-list" id="chatMessageList">
+            <div class="chat-empty-state" id="chatEmptyState">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-7z"/></svg>
+              <div class="line-1">Start a conversation</div>
+              <div class="line-2">Type a message below to begin</div>
+            </div>
+          </div>
+
+          <div class="chat-input-bar">
+            <input type="text" id="chatInput" placeholder="Type a message...">
+            <button class="chat-send-btn" id="chatSendBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- right panel: session summary -->
+        <div class="chat-panel">
+          <div class="chat-panel-card">
+            <div class="chat-panel-title">Session summary</div>
+            <div class="chat-panel-caption">Current trend &amp; message count update live; 7-day avg reflects your Stress Analysis history</div>
+
+            <div class="chat-panel-stat-row">
+              <div class="chat-panel-stat-label">Current trend</div>
+              <div class="chat-panel-stat-value" id="panelCurrentTrend">
+                <span class="chat-panel-trend-dot" id="panelTrendDot"></span>
+                <span id="panelTrendLabel">No data yet</span>
+              </div>
+            </div>
+            <div class="chat-panel-stat-row">
+              <div class="chat-panel-stat-label">7-day avg stress</div>
+              <div class="chat-panel-stat-value">42/100</div>
+            </div>
+            <div class="chat-panel-stat-row">
+              <div class="chat-panel-stat-label">Messages today</div>
+              <div class="chat-panel-stat-value" id="panelMessagesToday">0</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ VIEW: PROFILE ============ -->
+    <section class="view" id="view-profile">
+      <div class="profile-scroll">
+
+        <!-- profile header card (Batch 3A) -->
+        <div class="profile-header-card">
+          <div class="profile-avatar-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+          </div>
+          <div class="profile-header-info">
+            <div class="profile-name" id="profileHeaderName">Anonymous User</div>
+            <div class="profile-meta-row">
+              <div class="profile-meta-tag" id="profileHeaderIdTag">Anonymous ID: <b>#SHY-4471</b></div>
+              <div class="profile-meta-tag" id="profileHeaderCaseTag">Case ref: <b>CR-2026-0142</b></div>
+            </div>
+          </div>
+          <button class="profile-edit-btn" id="editProfileBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            Edit profile
+          </button>
+        </div>
+
+        <!-- profile stats row (Batch 3B) -->
+        <div class="profile-stats-row">
+          <div class="profile-stat-card">
+            <div class="profile-stat-icon" style="background:var(--teal-soft); color:var(--teal-deep);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 6-8 3 3"/></svg>
+            </div>
+            <div>
+              <div class="profile-stat-label">7-day avg stress</div>
+              <div class="profile-stat-value">42/100</div>
+            </div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="profile-stat-icon" style="background:var(--blue-soft); color:var(--blue);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            </div>
+            <div>
+              <div class="profile-stat-label">Total check-ins</div>
+              <div class="profile-stat-value">18</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- profile edit form (now functional — Save updates the header card above) -->
+        <div class="profile-edit-card" id="profileEditCard">
+          <div class="card-title">Edit profile</div>
+          <div class="card-caption">Update your display details</div>
+          <div class="profile-form-grid">
+            <div class="profile-form-field">
+              <label>Display name</label>
+              <input type="text" id="profileNameInput" value="Anonymous User" disabled>
+            </div>
+            <div class="profile-form-field">
+              <label>Anonymous ID</label>
+              <input type="text" id="profileIdInput" value="#SHY-4471" disabled>
+            </div>
+            <div class="profile-form-field">
+              <label>Case reference</label>
+              <input type="text" id="profileCaseInput" value="CR-2026-0142" disabled>
+            </div>
+            <div class="profile-form-field">
+              <label>Preferred contact time</label>
+              <input type="text" id="profileContactInput" value="Not set" disabled>
+            </div>
+          </div>
+          <div class="profile-edit-actions" id="profileEditActions">
+            <button class="profile-save-btn" id="profileSaveBtn">Save changes</button>
+            <button class="profile-cancel-btn" id="profileCancelBtn">Cancel</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ VIEW: STRESS ANALYSIS ============ -->
+    <section class="view" id="view-stress-analysis">
+      <div class="stress-scroll">
+
+        <!-- big trend chart (Batch 4A) -->
+        <div class="card trend-card-lg">
+          <div class="trend-head">
+            <div>
+              <div class="card-title">Stress trend</div>
+              <div class="card-caption">Your stress levels over the last 7 days</div>
+            </div>
+            <div class="trend-legend">
+              <span><span class="dot" style="background:var(--teal)"></span>Stress level</span>
+            </div>
+          </div>
+          <div class="trend-chart-lg">
+            <svg viewBox="0 0 1180 220" width="100%" height="200" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="areaGradLg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#4C8C82" stop-opacity="0.22"/>
+                  <stop offset="100%" stop-color="#4C8C82" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,150 C65,142 130,130 196,130 C262,130 328,140 393,140 C459,140 524,120 590,120 C655,120 721,128 786,128 C852,128 917,98 983,98 C1049,98 1114,112 1180,112 L1180,220 L0,220 Z" fill="url(#areaGradLg)"/>
+              <path d="M0,150 C65,142 130,130 196,130 C262,130 328,140 393,140 C459,140 524,120 590,120 C655,120 721,128 786,128 C852,128 917,98 983,98 C1049,98 1114,112 1180,112" fill="none" stroke="#4C8C82" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="983" cy="98" r="5.5" fill="#fff" stroke="#4C8C82" stroke-width="3"/>
+            </svg>
+          </div>
+          <div class="trend-days">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+        </div>
+
+        <!-- 3-signal breakdown (Batch 4B) -->
+        <div class="signal-row">
+          <div class="signal-card">
+            <div class="signal-icon" style="background:var(--blue-soft); color:#3E6B82;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-4 4v-4H6.5A2.5 2.5 0 0 1 4 13.5v-7z"/></svg>
+            </div>
+            <div class="signal-label">Text sentiment</div>
+            <div class="signal-value">Moderate</div>
+            <div class="signal-bar"><div class="signal-bar-fill" style="width:52%; background:var(--yellow);"></div></div>
+            <div class="signal-caption">Based on recent chat messages</div>
+          </div>
+          <div class="signal-card">
+            <div class="signal-icon" style="background:var(--lavender); color:var(--lavender-deep);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M5 12H1M23 12h-4M5.6 5.6l2.8 2.8M18.4 5.6l-2.8 2.8M5.6 18.4l2.8-2.8M18.4 18.4l-2.8-2.8"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <div class="signal-label">Vocal stress</div>
+            <div class="signal-value">Low</div>
+            <div class="signal-bar"><div class="signal-bar-fill" style="width:24%; background:var(--teal);"></div></div>
+            <div class="signal-caption">Based on recent call audio</div>
+          </div>
+          <div class="signal-card">
+            <div class="signal-icon" style="background:#F7E3DE; color:#B9583D;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+            </div>
+            <div class="signal-label">Keyword flags</div>
+            <div class="signal-value">2 flagged</div>
+            <div class="signal-bar"><div class="signal-bar-fill" style="width:38%; background:#D9714F;"></div></div>
+            <div class="signal-caption">Safety-net keyword matches this week</div>
+          </div>
+        </div>
+
+        <!-- past check-ins list (Batch 4C) -->
+        <div class="card checkins-card">
+          <div class="card-title">Past check-ins</div>
+          <div class="card-caption">Your recent stress assessment history</div>
+
+          <div class="checkins-list">
+            <div class="checkin-row">
+              <div class="checkin-date">
+                <div class="checkin-day">Today</div>
+                <div class="checkin-time">9:42 AM</div>
+              </div>
+              <div class="checkin-snippet">"Deadlines have been piling up, feeling a bit on edge."</div>
+              <div class="chat-severity-badge moderate"><span class="dot-sm"></span>Moderate</div>
+            </div>
+            <div class="checkin-row">
+              <div class="checkin-date">
+                <div class="checkin-day">Yesterday</div>
+                <div class="checkin-time">7:15 PM</div>
+              </div>
+              <div class="checkin-snippet">"Had a decent day, went for a walk in the evening."</div>
+              <div class="chat-severity-badge low"><span class="dot-sm"></span>Low</div>
+            </div>
+            <div class="checkin-row">
+              <div class="checkin-date">
+                <div class="checkin-day">2 days ago</div>
+                <div class="checkin-time">11:03 PM</div>
+              </div>
+              <div class="checkin-snippet">"Couldn't sleep, kept thinking about the exam results."</div>
+              <div class="chat-severity-badge high"><span class="dot-sm"></span>High</div>
+            </div>
+            <div class="checkin-row">
+              <div class="checkin-date">
+                <div class="checkin-day">4 days ago</div>
+                <div class="checkin-time">8:20 AM</div>
+              </div>
+              <div class="checkin-snippet">"Feeling steady, just a normal amount of work pressure."</div>
+              <div class="chat-severity-badge low"><span class="dot-sm"></span>Low</div>
+            </div>
+            <div class="checkin-row">
+              <div class="checkin-date">
+                <div class="checkin-day">6 days ago</div>
+                <div class="checkin-time">6:48 PM</div>
+              </div>
+              <div class="checkin-snippet">"Anxious about the upcoming presentation, hard to focus."</div>
+              <div class="chat-severity-badge moderate"><span class="dot-sm"></span>Moderate</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ============ VIEW: ANONYMOUS CALLS ============ -->
+    <section class="view" id="view-anonymous-calls">
+      <div class="view-placeholder">Anonymous Calls view — coming in Batch 5</div>
+    </section>
+
+    <!-- ============ VIEW: BREATHING & RELAXATION ============ -->
+    <section class="view" id="view-breathing">
+      <div class="view-placeholder">Breathing &amp; Relaxation — unchanged (no updates planned)</div>
+    </section>
+
+    <!-- ============ VIEW: HISTORY ============ -->
+    <section class="view" id="view-history">
+      <div class="view-placeholder">History — unchanged (no updates planned)</div>
+    </section>
+
+    <!-- ============ VIEW: SETTINGS ============ -->
+    <section class="view" id="view-settings">
+      <div class="view-placeholder">Settings — unchanged (no updates planned)</div>
+    </section>
+
+  </main>
+
+</div>
+
+<script>
+  // ---------- VIEW SWITCHER ----------
+  // Click on any sidebar nav item -> show its matching .view section, hide the rest.
+  // No page reload, no dependency on order — matches nav-item's data-view to #view-<name>.
+  (function () {
+    const navItems = document.querySelectorAll('.nav-item[data-view]');
+    const views = document.querySelectorAll('.view');
+
+    function switchView(viewName) {
+      views.forEach(function (view) {
+        view.classList.toggle('active', view.id === 'view-' + viewName);
+      });
+      navItems.forEach(function (item) {
+        item.classList.toggle('active', item.dataset.view === viewName);
+      });
+    }
+
+    navItems.forEach(function (item) {
+      item.addEventListener('click', function () {
+        switchView(item.dataset.view);
+      });
+    });
+
+    // Exposed so other UI elements (e.g. the "Start Stress Check" CTA) can
+    // navigate views without duplicating the switching logic.
+    window.sahayakSwitchView = switchView;
+  })();
+
+  // ---------- DASHBOARD: "Start Stress Check" CTA ----------
+  (function () {
+    const startBtn = document.getElementById('startStressCheckBtn');
+    if (!startBtn) return;
+
+    startBtn.addEventListener('click', function () {
+      window.sahayakSwitchView('aichat');
+      const chatInput = document.getElementById('chatInput');
+      if (chatInput) {
+        setTimeout(function () { chatInput.focus(); }, 50);
+      }
+    });
+  })();
+
+  // ---------- PROFILE: functional edit form (with localStorage persistence) ----------
+  (function () {
+    const editBtn = document.getElementById('editProfileBtn');
+    const editCard = document.getElementById('profileEditCard');
+    if (!editBtn || !editCard) return;
+
+    const STORAGE_KEY = 'sahayakProfile';
+
+    const actions = document.getElementById('profileEditActions');
+    const saveBtn = document.getElementById('profileSaveBtn');
+    const cancelBtn = document.getElementById('profileCancelBtn');
+    const inputs = editCard.querySelectorAll('.profile-form-field input');
+
+    const nameInput = document.getElementById('profileNameInput');
+    const idInput = document.getElementById('profileIdInput');
+    const caseInput = document.getElementById('profileCaseInput');
+    const contactInput = document.getElementById('profileContactInput');
+
+    const headerName = document.getElementById('profileHeaderName');
+    const headerIdTag = document.getElementById('profileHeaderIdTag');
+    const headerCaseTag = document.getElementById('profileHeaderCaseTag');
+
+    let snapshot = {};
+
+    // Load any previously saved profile (survives page refresh).
+    // If nothing is saved yet, the original markup values stay as-is.
+    function loadSavedProfile() {
+      let saved = null;
+      try {
+        saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      } catch (e) {
+        saved = null;
+      }
+      if (!saved) return;
+
+      nameInput.value = saved.name || nameInput.value;
+      idInput.value = saved.id || idInput.value;
+      caseInput.value = saved.caseRef || caseInput.value;
+      contactInput.value = saved.contact || contactInput.value;
+
+      headerName.textContent = saved.name || headerName.textContent;
+      headerIdTag.innerHTML = 'Anonymous ID: <b>' + (saved.id || '—') + '</b>';
+      headerCaseTag.innerHTML = 'Case ref: <b>' + (saved.caseRef || '—') + '</b>';
+    }
+
+    function enterEditMode() {
+      snapshot = {
+        name: nameInput.value,
+        id: idInput.value,
+        caseRef: caseInput.value,
+        contact: contactInput.value
+      };
+      inputs.forEach(function (i) { i.disabled = false; });
+      actions.style.display = 'flex';
+      editBtn.style.display = 'none';
+      nameInput.focus();
+    }
+
+    function exitEditMode() {
+      inputs.forEach(function (i) { i.disabled = true; });
+      actions.style.display = 'none';
+      editBtn.style.display = 'inline-flex';
+    }
+
+    function saveChanges() {
+      const newName = nameInput.value.trim() || 'Anonymous User';
+      const newId = idInput.value.trim() || '—';
+      const newCase = caseInput.value.trim() || '—';
+      const newContact = contactInput.value.trim() || 'Not set';
+
+      headerName.textContent = newName;
+      headerIdTag.innerHTML = 'Anonymous ID: <b>' + newId + '</b>';
+      headerCaseTag.innerHTML = 'Case ref: <b>' + newCase + '</b>';
+
+      // Persist so a page refresh doesn't fall back to the anonymous defaults.
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          name: newName, id: newId, caseRef: newCase, contact: newContact
+        }));
+      } catch (e) {
+        // localStorage unavailable (e.g. private browsing) — edits still work for this session.
+      }
+
+      exitEditMode();
+    }
+
+    function cancelChanges() {
+      nameInput.value = snapshot.name;
+      idInput.value = snapshot.id;
+      caseInput.value = snapshot.caseRef;
+      contactInput.value = snapshot.contact;
+      exitEditMode();
+    }
+
+    loadSavedProfile();
+
+    editBtn.addEventListener('click', enterEditMode);
+    saveBtn.addEventListener('click', saveChanges);
+    cancelBtn.addEventListener('click', cancelChanges);
+  })();
+
+
+  // ---------- AI CHAT: message send flow (Batch 2B) + mock reply/severity (Batch 2C) ----------
+  (function () {
+    const input = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('chatSendBtn');
+    const messageList = document.getElementById('chatMessageList');
+    const emptyState = document.getElementById('chatEmptyState');
+
+    // Session-only counters for the right panel (Batch 2D).
+    // Resets on page reload — will be backed by real session/user data later.
+    let messagesTodayCount = 0;
+    const panelMessagesToday = document.getElementById('panelMessagesToday');
+    const panelTrendDot = document.getElementById('panelTrendDot');
+    const panelTrendLabel = document.getElementById('panelTrendLabel');
+
+    function updateSessionPanel(analysis) {
+      messagesTodayCount += 1;
+      panelMessagesToday.textContent = messagesTodayCount;
+
+      panelTrendDot.className = 'chat-panel-trend-dot ' + analysis.label;
+      panelTrendLabel.textContent = analysis.label.charAt(0).toUpperCase() + analysis.label.slice(1);
+    }
+
+    // Dummy keyword-based severity analysis.
+    // Return shape {score, label, reasoning} matches the future SahayakML.analyzeText()
+    // contract planned for Batch 6 — swap the body of this function with the real
+    // ML call later; nothing else in this file needs to change.
+    function analyzeMessage(text) {
+      const lower = text.toLowerCase();
+      const highWords = ['hopeless', 'can\'t cope', 'cant cope', 'panic', 'worthless', 'breaking down', 'overwhelmed', 'can\'t sleep', 'cant sleep'];
+      const moderateWords = ['stressed', 'anxious', 'anxiety', 'tired', 'worried', 'pressure', 'deadline', 'exhausted', 'sad'];
+
+      const hasHigh = highWords.some(function (w) { return lower.indexOf(w) !== -1; });
+      const hasModerate = moderateWords.some(function (w) { return lower.indexOf(w) !== -1; });
+
+      if (hasHigh) {
+        return { score: 82, label: 'high', reasoning: 'Message contains high-intensity distress keywords.' };
+      }
+      if (hasModerate) {
+        return { score: 52, label: 'moderate', reasoning: 'Message contains moderate stress-related keywords.' };
+      }
+      return { score: 18, label: 'low', reasoning: 'No significant stress keywords detected.' };
+    }
+
+    // Small set of canned replies per severity label — placeholder copy only.
+    const mockReplies = {
+      low: [
+        "Thanks for sharing that. It sounds like things are fairly steady right now — anything on your mind you'd like to talk through?",
+        "Good to hear from you. How has your day been overall?"
+      ],
+      moderate: [
+        "That sounds like a lot to carry. Would a short breathing exercise help before we talk more?",
+        "I hear you — that kind of pressure is tiring. Want to tell me more about what's weighing on you?"
+      ],
+      high: [
+        "That sounds really heavy, and I'm glad you told me. You don't have to go through this alone — would you like me to share some immediate support options?",
+        "I'm here with you. Let's slow down for a moment — can you tell me a bit more about what's happening right now?"
+      ]
+    };
+
+    function pickReply(label) {
+      const options = mockReplies[label];
+      return options[Math.floor(Math.random() * options.length)];
+    }
+
+    function appendUserMessage(text, analysis) {
+      const row = document.createElement('div');
+      row.className = 'chat-bubble-row user';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble';
+      bubble.textContent = text;
+      row.appendChild(bubble);
+
+      const badge = document.createElement('div');
+      badge.className = 'chat-severity-badge ' + analysis.label;
+      badge.innerHTML = '<span class="dot-sm"></span>' +
+        analysis.label.charAt(0).toUpperCase() + analysis.label.slice(1) + ' severity';
+      row.appendChild(badge);
+
+      messageList.appendChild(row);
+    }
+
+    function showTypingIndicator() {
+      const row = document.createElement('div');
+      row.className = 'chat-typing-row';
+      row.id = 'chatTypingRow';
+      row.innerHTML = '<div class="chat-typing-bubble"><span></span><span></span><span></span></div>';
+      messageList.appendChild(row);
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    function appendAiReply(text) {
+      const typingRow = document.getElementById('chatTypingRow');
+      if (typingRow) typingRow.remove();
+
+      const row = document.createElement('div');
+      row.className = 'chat-bubble-row ai';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble';
+      bubble.textContent = text;
+      row.appendChild(bubble);
+
+      messageList.appendChild(row);
+      messageList.scrollTop = messageList.scrollHeight;
+    }
+
+    function sendMessage() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      if (emptyState) {
+        emptyState.remove();
+      }
+
+      const analysis = analyzeMessage(text);
+      appendUserMessage(text, analysis);
+      updateSessionPanel(analysis);
+
+      input.value = '';
+      messageList.scrollTop = messageList.scrollHeight;
+
+      showTypingIndicator();
+      setTimeout(function () {
+        appendAiReply(pickReply(analysis.label));
+      }, 900);
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        sendMessage();
+      }
+    });
+  })();
+</script>
+
+</body>
+</html>
