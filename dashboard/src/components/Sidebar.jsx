@@ -9,7 +9,7 @@ const NAV_ITEMS = [
   { key: 'settings', label: 'Settings' },
 ];
 
-export default function Sidebar({ activeView, onNavigate }) {
+export default function Sidebar({ activeView, onNavigate, onLogout }) {
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -40,6 +40,10 @@ export default function Sidebar({ activeView, onNavigate }) {
           <div className="name">Aditi Rao</div>
           <div className="role">Free plan</div>
         </div>
+      </div>
+
+      <div className="nav-item" onClick={onLogout} style={{ marginTop: 8, opacity: 0.7 }}>
+        Log out
       </div>
     </aside>
   );
