@@ -1,15 +1,16 @@
-from typing import List, Optional
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
 import os
 import shutil
 import tempfile
-from fastapi import UploadFile, File
+from typing import List
+
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from pydantic import BaseModel, Field
+
 from src.pipeline import run_pipeline
 from src.companion import generate_supportive_reply
+from fastapi.middleware.cors import CORSMiddleware
 
-class RespondResponse(AssessResponse):
-    counselor_reply: str
+
 class AssessRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Victim's message/transcript to assess.")
 
@@ -28,10 +29,21 @@ class AssessResponse(BaseModel):
     reasoning: str
 
 
+class RespondResponse(AssessResponse):
+    counselor_reply: str
+
+
 app = FastAPI(
     title="SAHAY — Stress Assessment API",
     description="Real-time stress/trauma severity assessment for NHAA (14566) helpline inputs.",
     version="0.1.0",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -49,13 +61,13 @@ def assess(payload: AssessRequest):
     try:
         result = run_pipeline(text=payload.text)
     except ValueError as e:
-        # e.g. empty/whitespace-only text reaching the pipeline
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        # model load / inference failure — don't leak internals, but don't crash either
         raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
 
     return result
+
+
 @app.post("/assess-audio", response_model=AssessResponse)
 async def assess_audio(file: UploadFile = File(...)):
     suffix = os.path.splitext(file.filename)[1] or ".mp3"
@@ -72,6 +84,8 @@ async def assess_audio(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
     return result
+
+
 @app.post("/respond", response_model=RespondResponse)
 def respond(payload: AssessRequest):
     try:
