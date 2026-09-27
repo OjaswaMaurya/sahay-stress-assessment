@@ -57,7 +57,13 @@ def generate_supportive_reply(text: str, severity: str) -> str:
             max_tokens=150,
             temperature=0.7,
         )
-        return response.choices[0].message.content.strip()
+        reply = response.choices[0].message.content.strip()
+        if not reply:
+            # Groq returned a technically-successful response with empty content
+            # (happens on very short/ambiguous prompts) — treat that the same
+            # as a failed call rather than sending a blank bubble to the victim.
+            raise ValueError("Groq returned an empty completion")
+        return reply
     except Exception as e:
         print(f"GROQ CALL FAILED: {e}")
         return FALLBACK_REPLIES.get(severity, FALLBACK_REPLIES["Medium"])

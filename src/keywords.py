@@ -6,6 +6,16 @@ SELF_HARM = [
     "end this life",
     "want to die",
     "i want to die",
+    "need to die",
+    "i need to die",
+    "have to die",
+    "i have to die",
+    "should die",
+    "i should die",
+    "deserve to die",
+    "i deserve to die",
+    "supposed to die",
+    "meant to die",
     "wish i was dead",
     "wish i were dead",
     "wish i wasn't alive",
@@ -28,7 +38,7 @@ SELF_HARM = [
     "better off without me",
     "world better off without me",
     "everyone better off without me",
-
+ 
     # inability / exhaustion framing
     "can't take this anymore",
     "cant take this anymore",
@@ -62,7 +72,7 @@ SELF_HARM = [
     "done with everything",
     "i'm done",
     "i am done",
-
+ 
     # hopelessness framing
     "no point in continuing",
     "no point in living",
@@ -92,7 +102,7 @@ SELF_HARM = [
     "no one is listening to me",
     "no one cares if i'm gone",
     "no one would notice if i disappeared",
-
+ 
     # method/plan indicators (kept generic — flag toward High without naming methods)
     "have a plan to hurt myself",
     "thinking about hurting myself",
@@ -104,7 +114,7 @@ SELF_HARM = [
     "cutting myself",
     "harm myself",
 ]
-
+ 
 THREAT_EXPLICIT = [
     "they said they'll hurt",
     "they said theyll hurt",
@@ -136,7 +146,7 @@ THREAT_EXPLICIT = [
     "threatened me with a knife",
     "threatened me with a gun",
 ]
-
+ 
 THREAT_VAGUE = [
     "threatening my family",
     "threatening me",
@@ -155,7 +165,7 @@ THREAT_VAGUE = [
     "watching my house",
     "showed up at my house again",
 ]
-
+ 
 VIOLENCE = [
     "beaten",
     "beaten up",
