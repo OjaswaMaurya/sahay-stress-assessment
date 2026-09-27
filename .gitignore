@@ -5,7 +5,8 @@ __pycache__/
 
 # C extensions
 *.so
-
+data/people.json
+data/counselors.json
 # Distribution / packaging
 .Python
 build/

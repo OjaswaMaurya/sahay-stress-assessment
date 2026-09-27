@@ -5,7 +5,7 @@ import AlertBanner from "./components/AlertBanner";
 import "./CounselorApp.css";
 
 const API_BASE = "http://127.0.0.1:8000";
-const WS_URL = "ws://127.0.0.1:8000/ws";
+const WS_URL = "ws://127.0.0.1:8000/ws/counselors";
 
 function playAlertBeep() {
   try {
@@ -29,8 +29,18 @@ function sortCases(cases) {
   return [...cases].sort((a, b) => {
     const diff = (order[b.severity] || 0) - (order[a.severity] || 0);
     if (diff !== 0) return diff;
-    return b.timestamp - a.timestamp;
+    return b.updated_at - a.updated_at;
   });
+}
+
+// Add-or-replace by person_id — used for both "new_case" and "case_updated"
+// so a case is never duplicated in state no matter which event names it.
+function upsertCase(cases, updated) {
+  const idx = cases.findIndex((c) => c.person_id === updated.person_id);
+  if (idx === -1) return [...cases, updated];
+  const next = [...cases];
+  next[idx] = updated;
+  return next;
 }
 
 function CounselorApp({ email, onLogout }) {
@@ -40,12 +50,16 @@ function CounselorApp({ email, onLogout }) {
   const [alert, setAlert] = useState(null);
   const wsRef = useRef(null);
 
-  useEffect(() => {
-    fetch(`${API_BASE}/cases`)
+  const refreshCases = useCallback(() => {
+    return fetch(`${API_BASE}/cases`)
       .then((res) => res.json())
       .then((data) => setCases(sortCases(data)))
       .catch((err) => console.error("Failed to load cases", err));
   }, []);
+
+  useEffect(() => {
+    refreshCases();
+  }, [refreshCases]);
 
   useEffect(() => {
     const ws = new WebSocket(WS_URL);
@@ -56,27 +70,19 @@ function CounselorApp({ email, onLogout }) {
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
       if (msg.type === "new_case") {
-        setCases((prev) => sortCases([...prev, msg.case]));
+        setCases((prev) => sortCases(upsertCase(prev, msg.case)));
         if (msg.case.severity === "High") {
           setAlert(msg.case);
           playAlertBeep();
         }
       } else if (msg.type === "case_updated") {
-        setCases((prev) => sortCases(prev.map((c) => (c.id === msg.case.id ? msg.case : c))));
+        setCases((prev) => sortCases(upsertCase(prev, msg.case)));
       }
     };
     return () => ws.close();
   }, []);
 
-  const markReviewed = useCallback(async (id) => {
-    await fetch(`${API_BASE}/cases/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "reviewed" }),
-    });
-  }, []);
-
-  const selectedCase = cases.find((c) => c.id === selectedId) || null;
+  const selectedCase = cases.find((c) => c.person_id === selectedId) || null;
 
   return (
     <div className="cd-app">
@@ -85,7 +91,7 @@ function CounselorApp({ email, onLogout }) {
           caseData={alert}
           onDismiss={() => setAlert(null)}
           onView={() => {
-            setSelectedId(alert.id);
+            setSelectedId(alert.person_id);
             setAlert(null);
           }}
         />
@@ -109,16 +115,16 @@ function CounselorApp({ email, onLogout }) {
           </div>
           {cases.map((c) => (
             <CaseRow
-              key={c.id}
+              key={c.person_id}
               caseData={c}
-              selected={c.id === selectedId}
-              onClick={() => setSelectedId(c.id)}
+              selected={c.person_id === selectedId}
+              onClick={() => setSelectedId(c.person_id)}
             />
           ))}
         </aside>
         <main className="cd-detail">
           {selectedCase ? (
-            <CaseDetail caseData={selectedCase} onMarkReviewed={() => markReviewed(selectedCase.id)} />
+            <CaseDetail caseData={selectedCase} myEmail={email} onRefresh={refreshCases} />
           ) : (
             <div className="cd-detail-empty">Select a case from the queue to see details.</div>
           )}

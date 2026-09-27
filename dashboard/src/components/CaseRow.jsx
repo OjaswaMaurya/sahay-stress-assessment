@@ -3,22 +3,19 @@ function timeAgo(timestamp) {
   if (seconds < 60) return `${seconds}s ago`;
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
+  return `${Math.floor(minutes / 60)}h ago`;
 }
 
 function CaseRow({ caseData, selected, onClick }) {
   const sevLower = caseData.severity.toLowerCase();
   return (
-    <div
-      className={`cd-row${selected ? " selected" : ""}${caseData.status === "reviewed" ? " reviewed" : ""}`}
-      onClick={onClick}
-    >
+    <div className={`cd-row${selected ? " selected" : ""}`} onClick={onClick}>
       <div className={`cd-stripe ${sevLower}`} />
       <div>
-        <div className="cd-row-text">{caseData.input_text}</div>
+        <div className="cd-row-text">{caseData.person_name}</div>
         <div className="cd-row-meta">
-          {caseData.severity} · {timeAgo(caseData.timestamp)}
+          {caseData.severity} · {timeAgo(caseData.updated_at)}
+          {caseData.assigned_to ? " · Claimed" : " · Unclaimed"}
         </div>
       </div>
     </div>

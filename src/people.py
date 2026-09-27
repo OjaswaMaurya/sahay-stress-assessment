@@ -1,7 +1,8 @@
 import json
 import os
+import uuid
 
-REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "counselors.json")
+REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "people.json")
 
 
 def _load() -> dict:
@@ -17,17 +18,20 @@ def _save(data: dict) -> None:
         json.dump(data, f, indent=2)
 
 
-def register_counselor(name: str, email: str, phone: str) -> dict:
+def register_person(name: str, email: str) -> dict:
     data = _load()
     key = email.strip().lower()
-    data[key] = {"name": name.strip(), "email": key, "phone": phone.strip()}
+    if key in data:
+        return data[key]  # already registered — same id on every future login
+    person = {
+        "person_id": "SHY-" + uuid.uuid4().hex[:6].upper(),
+        "name": name.strip(),
+        "email": key,
+    }
+    data[key] = person
     _save(data)
-    return data[key]
+    return person
 
 
-def is_counselor(email: str) -> bool:
-    return email.strip().lower() in _load()
-
-
-def get_counselor(email: str):
+def get_person(email: str):
     return _load().get(email.strip().lower())

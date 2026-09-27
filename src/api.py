@@ -1,18 +1,17 @@
 import os
 import shutil
 import tempfile
+import time
 from typing import List
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from src.pipeline import run_pipeline
 from src.companion import generate_supportive_reply
-from fastapi.middleware.cors import CORSMiddleware
-import time
-import uuid
-from fastapi import WebSocket, WebSocketDisconnect
-from src.counselors import is_counselor
+from src.people import register_person, get_person
+from src.counselors import register_counselor, is_counselor, get_counselor
 
 
 class AssessRequest(BaseModel):
@@ -33,17 +32,15 @@ class AssessResponse(BaseModel):
     reasoning: str
 
 
-class RespondResponse(AssessResponse):
-    counselor_reply: str
-
-class CaseResponse(RespondResponse):
-    id: str
-    timestamp: float
-    status: str
+class CounselorRegister(BaseModel):
+    name: str = Field(..., min_length=1)
+    email: str = Field(..., min_length=3)
+    phone: str = Field(..., min_length=7)
 
 
-class StatusUpdate(BaseModel):
-    status: str
+class PersonRegister(BaseModel):
+    name: str = Field(..., min_length=1)
+    email: str = Field(..., min_length=3)
 
 
 class EmailInput(BaseModel):
@@ -51,7 +48,35 @@ class EmailInput(BaseModel):
 
 
 class RoleResponse(BaseModel):
-    role: str  
+    role: str
+    person_id: str | None = None
+    name: str | None = None
+
+
+class VictimMessageRequest(BaseModel):
+    person_id: str = Field(..., min_length=1)
+    person_name: str = Field(..., min_length=1)
+    text: str = Field(..., min_length=1)
+
+
+class CounselorMessageRequest(BaseModel):
+    counselor_email: str
+    text: str
+
+
+class ClaimRequest(BaseModel):
+    counselor_email: str
+
+
+class TransferRequest(BaseModel):
+    by_counselor_email: str
+    to_counselor_email: str
+
+
+class AIToggleRequest(BaseModel):
+    counselor_email: str
+    enabled: bool
+
 
 app = FastAPI(
     title="SAHAY — Stress Assessment API",
@@ -65,47 +90,49 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-class ConnectionManager:
-    """Tracks connected counselor dashboards and pushes live case updates."""
 
-    def __init__(self):
-        self.active: list[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        if websocket in self.active:
-            self.active.remove(websocket)
-
-    async def broadcast(self, message: dict):
-        dead = []
-        for connection in self.active:
-            try:
-                await connection.send_json(message)
-            except Exception:
-                dead.append(connection)
-        for connection in dead:
-            self.disconnect(connection)
-
-
-manager = ConnectionManager()
-
-CASES: list[dict] = []
+CASES: dict[str, dict] = {}  # keyed by person_id
+VICTIM_CONNECTIONS: dict[str, list[WebSocket]] = {}
+COUNSELOR_CONNECTIONS: list[WebSocket] = []
 SEVERITY_ORDER = {"High": 3, "Medium": 2, "Low": 1}
 
 
-async def _store_and_broadcast_case(result: dict) -> dict:
-    case = {
-        "id": str(uuid.uuid4()),
-        "timestamp": time.time(),
-        "status": "new",
-        **result,
-    }
-    CASES.append(case)
-    await manager.broadcast({"type": "new_case", "case": case})
-    return case
+def _get_or_create_case(person_id: str, person_name: str) -> dict:
+    if person_id not in CASES:
+        CASES[person_id] = {
+            "person_id": person_id,
+            "person_name": person_name,
+            "messages": [],
+            "severity": "Low",
+            "reasoning": "",
+            "top_emotion": "",
+            "confidence": 0.0,
+            "status": "new",
+            "assigned_to": None,
+            "ai_enabled": True,
+            "created_at": time.time(),
+            "updated_at": time.time(),
+        }
+    return CASES[person_id]
+
+
+async def _broadcast_counselors(message: dict):
+    dead = []
+    for ws in COUNSELOR_CONNECTIONS:
+        try:
+            await ws.send_json(message)
+        except Exception:
+            dead.append(ws)
+    for ws in dead:
+        COUNSELOR_CONNECTIONS.remove(ws)
+
+
+async def _push_to_victim(person_id: str, message: dict):
+    for ws in VICTIM_CONNECTIONS.get(person_id, []):
+        try:
+            await ws.send_json(message)
+        except Exception:
+            pass
 
 
 @app.get("/health")
@@ -115,17 +142,12 @@ def health():
 
 @app.post("/assess", response_model=AssessResponse)
 def assess(payload: AssessRequest):
-    """
-    Run the full SAHAY pipeline (emotion model + keyword safety-net +
-    severity fusion) on a piece of text and return a structured result.
-    """
     try:
         result = run_pipeline(text=payload.text)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
-
     return result
 
 
@@ -147,8 +169,11 @@ async def assess_audio(file: UploadFile = File(...)):
     return result
 
 
-@app.post("/respond", response_model=CaseResponse)
-async def respond(payload: AssessRequest):
+@app.post("/respond")
+async def respond(payload: VictimMessageRequest):
+    case = _get_or_create_case(payload.person_id, payload.person_name)
+    is_first_message = len(case["messages"]) == 0
+
     try:
         result = run_pipeline(text=payload.text)
     except ValueError as e:
@@ -156,40 +181,144 @@ async def respond(payload: AssessRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Assessment failed: {e}")
 
-    reply = generate_supportive_reply(payload.text, result["severity"])
-    full_result = {**result, "counselor_reply": reply}
-    return await _store_and_broadcast_case(full_result)
+    case["messages"].append({
+        "sender": "victim", "sender_name": payload.person_name,
+        "text": payload.text, "timestamp": time.time(),
+    })
+    case["severity"] = result["severity"]
+    case["reasoning"] = result["reasoning"]
+    case["top_emotion"] = result["top_emotion"]
+    case["confidence"] = result["confidence"]
+    case["updated_at"] = time.time()
 
-@app.get("/cases", response_model=list[CaseResponse])
+    if case["ai_enabled"]:
+        reply_text = generate_supportive_reply(payload.text, result["severity"])
+        case["messages"].append({
+            "sender": "assistant", "sender_name": "Sahayak Assistant",
+            "text": reply_text, "timestamp": time.time(),
+        })
+
+    await _broadcast_counselors({
+        "type": "new_case" if is_first_message else "case_updated",
+        "case": case,
+    })
+    return case
+
+
+@app.get("/cases")
 def get_cases():
     return sorted(
-        CASES,
-        key=lambda c: (SEVERITY_ORDER.get(c["severity"], 0), c["timestamp"]),
+        CASES.values(),
+        key=lambda c: (SEVERITY_ORDER.get(c["severity"], 0), c["updated_at"]),
         reverse=True,
     )
 
 
-@app.patch("/cases/{case_id}", response_model=CaseResponse)
-async def update_case_status(case_id: str, payload: StatusUpdate):
-    for case in CASES:
-        if case["id"] == case_id:
-            case["status"] = payload.status
-            await manager.broadcast({"type": "case_updated", "case": case})
-            return case
-    raise HTTPException(status_code=404, detail="Case not found")
+@app.post("/cases/{person_id}/claim")
+async def claim_case(person_id: str, payload: ClaimRequest):
+    case = CASES.get(person_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if case["assigned_to"] and case["assigned_to"] != payload.counselor_email:
+        raise HTTPException(status_code=409, detail=f"Already claimed by {case['assigned_to']}")
+    case["assigned_to"] = payload.counselor_email
+    case["status"] = "claimed"
+    case["updated_at"] = time.time()
+    await _broadcast_counselors({"type": "case_updated", "case": case})
+    return case
 
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            await websocket.receive_text()  # we don't use incoming messages, just keep the connection open
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
+@app.post("/cases/{person_id}/transfer")
+async def transfer_case(person_id: str, payload: TransferRequest):
+    case = CASES.get(person_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if case["assigned_to"] != payload.by_counselor_email:
+        raise HTTPException(status_code=403, detail="Only the assigned counselor can transfer this case")
+    if not is_counselor(payload.to_counselor_email):
+        raise HTTPException(status_code=400, detail="That email isn't a registered counselor")
+    case["assigned_to"] = payload.to_counselor_email
+    case["updated_at"] = time.time()
+    await _broadcast_counselors({"type": "case_updated", "case": case})
+    return case
+
+
+@app.post("/cases/{person_id}/ai-toggle")
+async def toggle_ai(person_id: str, payload: AIToggleRequest):
+    case = CASES.get(person_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if case["assigned_to"] != payload.counselor_email:
+        raise HTTPException(status_code=403, detail="Only the assigned counselor can toggle AI for this case")
+    case["ai_enabled"] = payload.enabled
+    case["updated_at"] = time.time()
+    await _broadcast_counselors({"type": "case_updated", "case": case})
+    return case
+
+
+@app.post("/cases/{person_id}/message")
+async def counselor_message(person_id: str, payload: CounselorMessageRequest):
+    case = CASES.get(person_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    if case["assigned_to"] != payload.counselor_email:
+        raise HTTPException(status_code=403, detail="Only the assigned counselor can message this case")
+
+    counselor = get_counselor(payload.counselor_email)
+    sender_name = counselor["name"] if counselor else payload.counselor_email
+
+    msg = {
+        "sender": "counselor", "sender_name": sender_name,
+        "text": payload.text, "timestamp": time.time(),
+    }
+    case["messages"].append(msg)
+    case["updated_at"] = time.time()
+
+    await _push_to_victim(person_id, {"type": "new_message", "message": msg})
+    await _broadcast_counselors({"type": "case_updated", "case": case})
+    return case
+
+
+@app.post("/auth/register-counselor")
+def register_counselor_endpoint(payload: CounselorRegister):
+    counselor = register_counselor(payload.name, payload.email, payload.phone)
+    return {"role": "counselor", "name": counselor["name"]}
+
+
+@app.post("/auth/register-person")
+def register_person_endpoint(payload: PersonRegister):
+    person = register_person(payload.name, payload.email)
+    return {"person_id": person["person_id"], "name": person["name"]}
 
 
 @app.post("/auth/check-role", response_model=RoleResponse)
 def check_role(payload: EmailInput):
-    role = "counselor" if is_counselor(payload.email) else "user"
-    return {"role": role}
+    if is_counselor(payload.email):
+        return {"role": "counselor"}
+    person = get_person(payload.email)
+    if person:
+        return {"role": "user", "person_id": person["person_id"], "name": person["name"]}
+    return {"role": "user"}
+
+
+@app.websocket("/ws/counselors")
+async def ws_counselors(websocket: WebSocket):
+    await websocket.accept()
+    COUNSELOR_CONNECTIONS.append(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        if websocket in COUNSELOR_CONNECTIONS:
+            COUNSELOR_CONNECTIONS.remove(websocket)
+
+
+@app.websocket("/ws/victim/{person_id}")
+async def ws_victim(websocket: WebSocket, person_id: str):
+    await websocket.accept()
+    VICTIM_CONNECTIONS.setdefault(person_id, []).append(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        VICTIM_CONNECTIONS[person_id].remove(websocket)

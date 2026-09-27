@@ -59,3 +59,10 @@
   font-size: 13px;
   margin: -4px 0 12px;
 }
+.login-switch {
+  margin-top: 14px;
+  font-size: 13px;
+  color: #2c5952;
+  cursor: pointer;
+  text-decoration: underline;
+}
